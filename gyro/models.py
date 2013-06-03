@@ -51,10 +51,19 @@ class StatDocument(Document):
             'extra': stat.extra
         }
     def save(self, safe = True, *args, **kwargs):
-        super( StatDocument, self).save(safe, *args, **kwargs)
-        # Update last_stat on station relation
+        # Get last stat from this station document
         stationDoc = StationDocument(self.db, self.connection)
         stationDoc.read(self.station_id)
+	if 'last_stat' in stationDoc.data:
+            last_stat = stationDoc.data['last_stat']
+        else:
+	    last_stat = None
+        # Create a new stat entry if it differs from the last one
+        if last_stat is None or \
+	   last_stat['bikes'] != self.data['bikes'] or \
+           last_stat['free'] != self.data['free']:
+                super( StatDocument, self).save(safe, *args, **kwargs)
+        # Update last_stat on station relation.
         stationDoc.data['last_stat'] = self.data
         stationDoc.save()
 
