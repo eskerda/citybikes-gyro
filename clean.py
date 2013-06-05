@@ -1,4 +1,5 @@
 from pymongo import Connection
+from gyro.configuration import db_credentials as credentials
 
-c = Connection()
-c.drop_database('citybikes')
+connection = Connection(credentials['host'], credentials['port'])
+connection.drop_database('citybikes')

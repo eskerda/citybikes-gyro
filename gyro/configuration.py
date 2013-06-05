@@ -4,10 +4,8 @@ db_credentials = {
     'database': 'citybikes'
 }
 
-memcached_credentials = [
-    '127.0.0.1:11211'
-]
-
-celery_credentials = {
-    
+redis_server = {
+    'host': 'localhost',
+    'port': 6379
 }
+
