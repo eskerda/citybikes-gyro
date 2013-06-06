@@ -13,7 +13,10 @@ connection = Connection(credentials['host'], credentials['port'])
 db = getattr(connection, credentials['database'])
 pool = ConnectionPool(host=redis_server['host'],port=redis_server['port'],db=0)
 redis_connection = Redis(connection_pool = pool)
-q = Queue(connection=redis_connection)
+
+q_medium = Queue('medium', connection=redis_connection)
+q_high = Queue('high', connection=redis_connection)
+
 scheduler = Scheduler('default', connection = redis_connection)
 
 def syncSystem(scheme, system):
@@ -29,9 +32,8 @@ def syncStation(station, tag, saveStat = False, reschedule = False):
             stat = Stat(station)
             statDoc = StatDocument(db, connection, stat)
             statDoc.save()
-        else:
-            sDoc = StationDocument(db, connection, station, tag)
-            sDoc.save()
+        sDoc = StationDocument(db, connection, station, tag)
+        sDoc.save()
         if reschedule:
             scheduler.enqueue_in(timedelta(minutes=4), syncStation, station, tag, saveStat, reschedule)
         return True
@@ -46,19 +48,10 @@ def syncStations(system, saveStat = False, reschedule = False):
         if system.sync:
             syncStation(station, system.tag, saveStat)
         else:
-            job = q.enqueue(syncStation, station, system.tag, saveStat, reschedule)
+            job = q_high.enqueue(syncStation, station, system.tag, saveStat, reschedule)
             jobs.append(job)
     if system.sync and reschedule:
         scheduler.enqueue_in(timedelta(minutes=4), syncStations, system, saveStat, reschedule)
-    """
-    if system.sync is False:
-        # Blocking... !
-        # Wait for all these jobs to end
-        res = True
-        while res:
-            jres = [j for j in jobs if j.result is None]
-            res = len(jres) > 0
-    """
 
 def updateSystem(scheme, system):
     instance = pybikes.getBikeShareSystem(scheme, system)

@@ -5,7 +5,7 @@ from gyro.configuration import redis_server as redis_info
 import pybikes
 
 pool = ConnectionPool(host=redis_info['host'],port=redis_info['port'],db=0)
-q = Queue(connection=Redis(connection_pool = pool))
+q = Queue('medium', connection=Redis(connection_pool = pool))
 
 schema_files = pybikes.getDataFiles()
 schemas = [pybikes.getDataFile(f) for f in schema_files]
