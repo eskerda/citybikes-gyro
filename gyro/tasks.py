@@ -25,8 +25,9 @@ def syncSystem(scheme, system):
     sysDoc.save()
     syncStations(sys, True)
 
-def syncStation(station, tag, saveStat = False, reschedule = False):
-    try:
+def syncStation(station_chunk, tag, saveStat = False, reschedule = False):
+    print "Processing chunk"
+    for station in station_chunk:
         station.update()
         if saveStat:
             stat = Stat(station)
@@ -35,20 +36,21 @@ def syncStation(station, tag, saveStat = False, reschedule = False):
         else:
             sDoc = StationDocument(db, connection, station, tag)
             sDoc.save()
-        if reschedule:
-            scheduler.enqueue_in(timedelta(minutes=4), syncStation, station, tag, saveStat, reschedule)
-        return True
-    except Exception:
-        return False
+    if reschedule:
+        scheduler.enqueue_in(timedelta(minutes=4), syncStation, station_chunk, tag, saveStat, reschedule)
 
 def syncStations(system, saveStat = False, reschedule = False):
     system.update()
     #Async stations in parallel...
-    for station in system.stations:
+    print "Generating chunks..."
+    chunks = [system.stations[i:i+10] for i in range(0, len(system.stations), 10)]
+    print "%d chunks!" % len(chunks)
+    for station_chunk in chunks:
         if system.sync:
-            syncStation(station, system.tag, saveStat)
+            syncStation(station_chunk, system.tag, saveStat)
         else:
-            q_high.enqueue(syncStation, station, system.tag, saveStat, reschedule)
+            q_high.enqueue(syncStation, station_chunk, system.tag, saveStat, reschedule)
+
     if system.sync and reschedule:
         scheduler.enqueue_in(timedelta(minutes=4), syncStations, system, saveStat, reschedule)
 
