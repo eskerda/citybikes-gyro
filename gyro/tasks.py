@@ -32,8 +32,9 @@ def syncStation(station, tag, saveStat = False, reschedule = False):
             stat = Stat(station)
             statDoc = StatDocument(db, connection, stat)
             statDoc.save()
-        sDoc = StationDocument(db, connection, station, tag)
-        sDoc.save()
+        else:
+            sDoc = StationDocument(db, connection, station, tag)
+            sDoc.save()
         if reschedule:
             scheduler.enqueue_in(timedelta(minutes=4), syncStation, station, tag, saveStat, reschedule)
         return True
