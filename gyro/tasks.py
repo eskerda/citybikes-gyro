@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from redis import Redis, ConnectionPool
 from rq import Queue
 from rq_scheduler import Scheduler
-from datetime import timedelta
+from datetime import datetime
 import pybikes
 from gyro.configuration import db_credentials as credentials
 from gyro.configuration import redis_server
@@ -14,10 +14,11 @@ db = getattr(connection, credentials['database'])
 pool = ConnectionPool(host=redis_server['host'],port=redis_server['port'],db=0)
 redis_connection = Redis(connection_pool = pool)
 
-q_medium = Queue('medium', connection=redis_connection)
-q_high = Queue('high', connection=redis_connection)
+q_medium = Queue('medium', connection = redis_connection)
+q_high = Queue('high', connection = redis_connection)
 
-scheduler = Scheduler('default', connection = redis_connection)
+scheduler = Scheduler('medium_sched', connection = redis_connection)
+scheduler_high = Scheduler('high_sched', connection = redis_connection)
 
 def syncSystem(scheme, system):
     sys = pybikes.getBikeShareSystem(scheme, system)
@@ -25,7 +26,7 @@ def syncSystem(scheme, system):
     sysDoc.save()
     syncStations(sys, True)
 
-def syncStation(station_chunk, tag, resync = False, reschedule = False):
+def syncStation(station_chunk, tag, resync = False):
     print "Processing chunk"
     for station in station_chunk:
         station.update()
@@ -41,10 +42,7 @@ def syncStation(station_chunk, tag, resync = False, reschedule = False):
         statDoc = StatDocument(db, connection, stat)
         statDoc.save()
 
-    if reschedule:
-        scheduler.enqueue_in(timedelta(minutes=4), syncStation, station_chunk, tag, saveStat, reschedule)
-
-def syncStations(system, resync = False, reschedule = False):
+def syncStations(system, resync = False):
     system.update()
     #Async stations in parallel...
     print "Generating chunks..."
@@ -54,13 +52,25 @@ def syncStations(system, resync = False, reschedule = False):
         if system.sync:
             syncStation(station_chunk, system.tag, resync)
         else:
-            q_high.enqueue(syncStation, station_chunk, system.tag, resync, reschedule)
-
-    if system.sync and reschedule:
-        scheduler.enqueue_in(timedelta(minutes=4), syncStations, system, saveStat, reschedule)
+            scheduler_high.schedule(
+                scheduled_time = datetime.now(),
+                func = syncStation,
+                args = (station_chunk, system.tag, resync,),
+                interval = 300,
+                repeat = None
+            )
 
 def updateSystem(scheme, system):
     instance = pybikes.getBikeShareSystem(scheme, system)
-    q_medium.enqueue_call(func = syncStations,
-                    args = (instance, False, False,),
-                    timeout = 240)
+    if instance.sync:
+        scheduler.schedule(
+                scheduled_time = datetime.now(),
+                func = syncStations,
+                args = (instance, False,),
+                interval = 60,
+                repeat = None
+        )
+    else:
+        q_medium.enqueue_call(func = syncStations,
+                        args = (instance, False,),
+                        timeout = 240)
