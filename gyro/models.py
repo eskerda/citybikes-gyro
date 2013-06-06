@@ -30,6 +30,9 @@ class Document(object):
     def read(self, id):
         self.data = self.collection.find_one({'_id': id})
 
+    def find(self, *args, **kwargs):
+        return self.collection.find(*args, **kwargs)
+
 class Stat(object):
     def __init__(self, station):
         self.station_id = station.get_hash()
@@ -54,13 +57,13 @@ class StatDocument(Document):
         # Get last stat from this station document
         stationDoc = StationDocument(self.db, self.connection)
         stationDoc.read(self.station_id)
-	if 'last_stat' in stationDoc.data:
+        if 'last_stat' in stationDoc.data:
             last_stat = stationDoc.data['last_stat']
         else:
-	    last_stat = None
+            last_stat = None
         # Create a new stat entry if it differs from the last one
         if last_stat is None or \
-	   last_stat['bikes'] != self.data['bikes'] or \
+	       last_stat['bikes'] != self.data['bikes'] or \
            last_stat['free'] != self.data['free']:
                 super( StatDocument, self).save(safe, *args, **kwargs)
         # Update last_stat on station relation.
@@ -72,18 +75,18 @@ class StatDocument(Document):
 class StationDocument(Document):
     __collection__ = 'stations'
 
-    def __load__(self, station, network_id, _id = None):
-
-        self.data = {
-            '_id': station.get_hash(),
-            'latitude': station.latitude,
-            'longitude': station.longitude,
-            'name': station.name,
-            'network_id': network_id,
-            'extra': station.extra
-        }
+    def __load__(self, station = None, network_id = None, _id = None):
+        if (station is not None and network_id is not None):
+            self.data = {
+                '_id': station.get_hash(),
+                'latitude': station.latitude,
+                'longitude': station.longitude,
+                'name': station.name,
+                'network_id': network_id,
+                'extra': station.extra
+            }
         if _id is not None:
-            self.data['_id'] = _id
+            self.read(_id)
 
 class SystemDocument(Document):
     __collection__ = 'systems'
