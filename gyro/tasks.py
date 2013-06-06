@@ -42,7 +42,7 @@ def syncStation(station_chunk, tag, resync = False):
         statDoc = StatDocument(db, connection, stat)
         statDoc.save()
 
-def syncStations(system, resync = False):
+def syncStations(system, resync = False, reschedule = False):
     system.update()
     #Async stations in parallel...
     print "Generating chunks..."
@@ -52,13 +52,20 @@ def syncStations(system, resync = False):
         if system.sync:
             syncStation(station_chunk, system.tag, resync)
         else:
-            scheduler_high.schedule(
-                scheduled_time = datetime.now(),
-                func = syncStation,
-                args = (station_chunk, system.tag, resync,),
-                interval = 300,
-                repeat = None
-            )
+            if reschedule:
+                scheduler_high.schedule(
+                    scheduled_time = datetime.now(),
+                    func = syncStation,
+                    args = (station_chunk, system.tag, resync,),
+                    interval = 300,
+                    repeat = None
+                )
+            else:
+                q_high.enqueue_call(
+                    func = syncStation,
+                    args = (station_chung, system.tag, resync,),
+                    timeout = 240
+                )
 
 def updateSystem(scheme, system):
     instance = pybikes.getBikeShareSystem(scheme, system)
@@ -72,5 +79,5 @@ def updateSystem(scheme, system):
         )
     else:
         q_medium.enqueue_call(func = syncStations,
-                        args = (instance, False,),
+                        args = (instance, False, True),
                         timeout = 240)
