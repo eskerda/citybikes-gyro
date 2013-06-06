@@ -48,7 +48,9 @@ def syncStations(system, saveStat = False, reschedule = False):
         if system.sync:
             syncStation(station, system.tag, saveStat)
         else:
-            q_high.enqueue(syncStation, station, system.tag, saveStat, reschedule)
+            q_high.enqueue_call(func = syncStation,
+                                args = (station, system.tag, saveStat, reschedule,),
+                                timeout = 240)
     if system.sync and reschedule:
         scheduler.enqueue_in(timedelta(minutes=4), syncStations, system, saveStat, reschedule)
 
