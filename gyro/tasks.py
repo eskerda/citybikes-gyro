@@ -63,7 +63,7 @@ def syncStations(system, resync = False, reschedule = False):
             else:
                 q_high.enqueue_call(
                     func = syncStation,
-                    args = (station_chung, system.tag, resync,),
+                    args = (station_chunk, system.tag, resync,),
                     timeout = 240
                 )
 
