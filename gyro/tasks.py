@@ -44,13 +44,11 @@ def syncStation(station, tag, saveStat = False, reschedule = False):
 def syncStations(system, saveStat = False, reschedule = False):
     system.update()
     #Async stations in parallel...
-    jobs = []
     for station in system.stations:
         if system.sync:
             syncStation(station, system.tag, saveStat)
         else:
-            job = q_high.enqueue(syncStation, station, system.tag, saveStat, reschedule)
-            jobs.append(job)
+            q_high.enqueue(syncStation, station, system.tag, saveStat, reschedule)
     if system.sync and reschedule:
         scheduler.enqueue_in(timedelta(minutes=4), syncStations, system, saveStat, reschedule)
 
