@@ -17,8 +17,14 @@ redis_connection = Redis(connection_pool = pool)
 q_medium = Queue('medium', connection = redis_connection)
 q_high = Queue('high', connection = redis_connection)
 
-scheduler = Scheduler('medium_sched', connection = redis_connection)
-scheduler_high = Scheduler('high_sched', connection = redis_connection)
+scheduler = Scheduler('medium', connection = redis_connection)
+scheduler_high = Scheduler('high', connection = redis_connection)
+
+scraper = pybikes.utils.PyBikesScraper()
+scraper.setProxies({
+    "http": "127.0.0.1:8118", 
+    "https":"127.0.0.1:8118"}
+)
 
 def syncSystem(scheme, system):
     sys = pybikes.getBikeShareSystem(scheme, system)
@@ -29,7 +35,12 @@ def syncSystem(scheme, system):
 def syncStation(station_chunk, tag, resync = False):
     print "Processing chunk"
     for station in station_chunk:
-        station.update()
+        try:
+            station.update(scraper)
+        except Exception:
+            print "Got an error, enabling proxy just for the lulz.."
+            scraper.enableProxy()
+            station.update(scraper)
         sDoc = StationDocument(db, connection, station, tag)
         if resync or sDoc.find({'_id': station.get_hash()}).count() == 0:
             # Save this unsynched station
@@ -43,7 +54,7 @@ def syncStation(station_chunk, tag, resync = False):
         statDoc.save()
 
 def syncStations(system, resync = False, reschedule = False):
-    system.update()
+    system.update(scraper)
     #Async stations in parallel...
     print "Generating chunks..."
     chunks = [system.stations[i:i+10] for i in range(0, len(system.stations), 10)]
@@ -70,6 +81,7 @@ def syncStations(system, resync = False, reschedule = False):
 def updateSystem(scheme, system):
     instance = pybikes.getBikeShareSystem(scheme, system)
     if instance.sync:
+        print "Programming %s update interval at %d seconds" % (system, 60)
         scheduler.schedule(
                 scheduled_time = datetime.now(),
                 func = syncStations,
