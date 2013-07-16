@@ -54,7 +54,12 @@ def syncStation(station_chunk, tag, resync = False):
         statDoc.save()
 
 def syncStations(system, resync = False, reschedule = False):
-    system.update(scraper)
+    try:
+        system.update(scraper)
+    except Exception:
+        print "Got an error updating, enabling proxy for the time being"
+        scraper.enableProxy()
+        system.update(scraper)
     #Async stations in parallel...
     print "Generating chunks..."
     chunks = [system.stations[i:i+10] for i in range(0, len(system.stations), 10)]
