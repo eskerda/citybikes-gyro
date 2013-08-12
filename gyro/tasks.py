@@ -26,8 +26,8 @@ scraper.setProxies({
     "https":"127.0.0.1:8118"}
 )
 
-def syncSystem(scheme, system):
-    sys = pybikes.getBikeShareSystem(scheme, system)
+def syncSystem(scheme, system, key = None):
+    sys = pybikes.getBikeShareSystem(scheme, system, key)
     sysDoc = SystemDocument(db, connection, scheme, sys)
     sysDoc.save()
     syncStations(sys, True)
@@ -83,8 +83,8 @@ def syncStations(system, resync = False, reschedule = False):
                     timeout = 240
                 )
 
-def updateSystem(scheme, system):
-    instance = pybikes.getBikeShareSystem(scheme, system)
+def updateSystem(scheme, system, key = None):
+    instance = pybikes.getBikeShareSystem(scheme, system, key)
     if instance.sync:
         print "Programming %s update interval at %d seconds" % (system, 60)
         scheduler.schedule(
