@@ -22,8 +22,8 @@ scheduler_high = Scheduler('high', connection = redis_connection)
 
 scraper = pybikes.utils.PyBikesScraper()
 scraper.setProxies({
-    "http": "127.0.0.1:8118", 
-    "https":"127.0.0.1:8118"}
+    "http": "http://127.0.0.1:8118", 
+    "https":"http://127.0.0.1:8118"}
 )
 
 def syncSystem(scheme, system, key = None):
