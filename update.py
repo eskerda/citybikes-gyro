@@ -8,6 +8,16 @@ from gyro.configuration import redis_server as redis_info
 import pybikes
 import keys
 
+def enqueueUniSystem(queue, task, instances, key, network = None):
+    for instance in instances:
+        if network is None or network == instance['tag']:
+            print "Putting %s on an %s queue!" % (instance['tag'], str(task))
+            queue.enqueue(task, schema['system'], instance['tag'], key)
+
+def enqueueMultiSystem(queue, task, schema, key, network = None):
+    for cls in schema['class']:
+        enqueueUniSystem(queue, task, schema['class'][cls]['instances'], key, network)
+
 pool = ConnectionPool(host=redis_info['host'],port=redis_info['port'],db=0)
 q = Queue('medium', connection=Redis(connection_pool = pool))
 
@@ -25,16 +35,22 @@ if args.schema is None:
     schemas = [pybikes.getDataFile(f) for f in schema_files]
 else:
     schemas = [pybikes.getDataFile(args.schema)]
+
+if args.sync:
+    task = tasks.syncSystem
+else:
+    task = tasks.updateSystem
+
 for schema in schemas:
-    for instance in schema['instances']:
-        if hasattr(keys, schema['system']):
-            key = eval('keys.%s' % schema['system'])
-        else:
-            key = None
-        if args.network is None or args.network == instance['tag']:
-            if args.sync:
-                print "Putting %s on a sync queue!" % instance['tag']
-                q.enqueue(tasks.syncSystem, schema['system'], instance['tag'], key)
-            else:
-                print "Putting %s on an update queue!" % instance['tag']
-                q.enqueue(tasks.updateSystem, schema['system'], instance['tag'], key)
+    if hasattr(keys, schema['system']):
+        key = eval('keys.%s' % schema['system'])
+    else:
+        key = None
+
+    if isinstance(schema['class'], unicode):
+        enqueueUniSystem(q, task, schema['instances'], key, args.network)
+    elif isinstance(schema['class'], dict):
+        enqueueMultiSystem(q, task, schema, key, args.network)
+    else:
+        raise Exception('Malformed schema')
+
