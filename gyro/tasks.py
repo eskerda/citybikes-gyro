@@ -3,6 +3,7 @@ from redis import Redis, ConnectionPool
 from rq import Queue
 from rq_scheduler import Scheduler
 from datetime import datetime
+import random
 import pybikes
 from gyro.configuration import db_credentials as credentials
 from gyro.configuration import redis_server
@@ -22,9 +23,12 @@ scheduler_high = Scheduler('high', connection = redis_connection)
 
 scraper = pybikes.utils.PyBikesScraper()
 scraper.setProxies({
-    "http": "http://127.0.0.1:8118", 
+    "http": "http://127.0.0.1:8118",
     "https":"http://127.0.0.1:8118"}
 )
+
+scraper.setUserAgent('Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML\
+                     , like Gecko) Chrome/31.0.1650.63 Safari/537.36')
 
 def syncSystem(scheme, system, key = None):
     sys = pybikes.getBikeShareSystem(scheme, system, key)
@@ -56,6 +60,8 @@ def syncStation(station_chunk, tag, resync = False):
 def syncStations(system, resync = False, reschedule = False):
     try:
         system.update(scraper)
+        if len(system.stations) == 0:
+            raise Exception
     except Exception:
         print "Got an error updating, enabling proxy for the time being"
         scraper.enableProxy()
@@ -86,12 +92,15 @@ def syncStations(system, resync = False, reschedule = False):
 def updateSystem(scheme, system, key = None):
     instance = pybikes.getBikeShareSystem(scheme, system, key)
     if instance.sync:
-        print "Programming %s update interval at %d seconds" % (system, 60)
+        interval = 60
+        if (scheme == 'bcycle'):
+            interval = (60 * 4) + random.randint(0, 60)
+        print "Programming %s update interval at %d seconds" % (system, interval)
         scheduler.schedule(
                 scheduled_time = datetime.now(),
                 func = syncStations,
                 args = (instance, False,),
-                interval = 60,
+                interval = interval,
                 repeat = None
         )
     else:
