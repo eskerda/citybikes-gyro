@@ -94,7 +94,7 @@ def updateSystem(scheme, system, key = None):
     if instance.sync:
         interval = 60
         if (scheme == 'bcycle'):
-            interval = (60 * 4) + random.randint(0, 60)
+            interval = random.randint(180, 300)
         print "Programming %s update interval at %d seconds" % (system, interval)
         scheduler.schedule(
                 scheduled_time = datetime.now(),
