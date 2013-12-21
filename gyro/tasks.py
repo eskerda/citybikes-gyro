@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from redis import Redis, ConnectionPool
 from rq import Queue
