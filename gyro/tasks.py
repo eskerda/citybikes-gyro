@@ -27,8 +27,7 @@ scraper.setProxies({
     "https":"http://127.0.0.1:8118"}
 )
 
-scraper.setUserAgent('Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML\
-                     , like Gecko) Chrome/31.0.1650.63 Safari/537.36')
+scraper.setUserAgent('PyBikes™ v0.2')
 
 def syncSystem(scheme, system, key = None):
     sys = pybikes.getBikeShareSystem(scheme, system, key)
