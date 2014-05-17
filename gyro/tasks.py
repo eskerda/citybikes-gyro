@@ -8,6 +8,7 @@ import random
 import pybikes
 from gyro.configuration import db_credentials as credentials
 from gyro.configuration import redis_server
+from gyro.configuration import proxify as proxify_list
 from pymongo import Connection
 from gyro.models import StationDocument, SystemDocument, Stat, StatDocument
 
@@ -61,7 +62,10 @@ def syncStation(station_chunk, tag, resync = False):
         statDoc = StatDocument(db, connection, stat)
         statDoc.save()
 
-def syncStations(system, resync = False, reschedule = False):
+def syncStations(system, resync = False, reschedule = False, proxify = False):
+    if proxify or system.meta['system'] in proxify_list:
+        print "System in proxify list, proxifying!"
+        scraper.enableProxy()
     try:
         system.update(scraper)
         if len(system.stations) == 0:
@@ -99,11 +103,12 @@ def updateSystem(scheme, system, key = None):
         interval = 60
         if (scheme == 'bcycle'):
             interval = random.randint(180, 300)
+        proxify = scheme in proxify_list
         print "Programming %s update interval at %d seconds" % (system, interval)
         scheduler.schedule(
                 scheduled_time = datetime.now(),
                 func = syncStations,
-                args = (instance, False,),
+                args = (instance, False,False,proxify),
                 interval = interval,
                 repeat = None
         )

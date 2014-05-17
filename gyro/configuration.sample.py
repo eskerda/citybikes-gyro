@@ -10,3 +10,4 @@ redis_server = {
     'db': 0
 }
 
+proxify = ['bcycle']
