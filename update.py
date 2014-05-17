@@ -18,7 +18,11 @@ def enqueueMultiSystem(queue, task, schema, key, network = None):
     for cls in schema['class']:
         enqueueUniSystem(queue, task, schema['class'][cls]['instances'], key, network)
 
-pool = ConnectionPool(host=redis_info['host'],port=redis_info['port'],db=0)
+pool = ConnectionPool(
+    host=redis_info['host'],
+    port=redis_info['port'],
+    db=redis_info['db']
+)
 q = Queue('medium', connection=Redis(connection_pool = pool))
 
 parser = argparse.ArgumentParser(description='Process bike sharing networks')

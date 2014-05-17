@@ -13,7 +13,11 @@ from gyro.models import StationDocument, SystemDocument, Stat, StatDocument
 
 connection = Connection(credentials['host'], credentials['port'])
 db = getattr(connection, credentials['database'])
-pool = ConnectionPool(host=redis_server['host'],port=redis_server['port'],db=0)
+pool = ConnectionPool(
+    host=redis_server['host'],
+    port=redis_server['port'],
+    db=redis_server['db']
+)
 redis_connection = Redis(connection_pool = pool)
 
 q_medium = Queue('medium', connection = redis_connection)
