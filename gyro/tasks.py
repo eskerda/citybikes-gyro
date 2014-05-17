@@ -63,7 +63,10 @@ def syncStation(station_chunk, tag, resync = False):
         statDoc.save()
 
 def syncStations(system, resync = False, reschedule = False, proxify = False):
-    if proxify or system.meta['system'] in proxify_list:
+
+    if proxify or (
+        'system' in system.meta and system.meta['system'] in proxify_list
+    ):
         print "System in proxify list, proxifying!"
         scraper.enableProxy()
     try:
