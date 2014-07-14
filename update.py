@@ -5,6 +5,7 @@ from rq import Queue
 
 from gyro import tasks
 from gyro.configuration import redis_server as redis_info
+from gyro.configuration import ignore as ignored_services
 import pybikes
 import keys
 
@@ -23,6 +24,7 @@ pool = ConnectionPool(
     port=redis_info['port'],
     db=redis_info['db']
 )
+
 q = Queue('medium', connection=Redis(connection_pool = pool))
 
 parser = argparse.ArgumentParser(description='Process bike sharing networks')
@@ -46,6 +48,9 @@ else:
     task = tasks.updateSystem
 
 for schema in schemas:
+    if schema['system'] in ignored_services:
+        print "Ignoring %s !!1one" % schema['system']
+        continue
     if hasattr(keys, schema['system']):
         key = eval('keys.%s' % schema['system'])
     else:
