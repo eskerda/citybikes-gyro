@@ -111,7 +111,7 @@ def updateSystem(scheme, system, key = None):
         scheduler.schedule(
                 scheduled_time = datetime.now(),
                 func = syncStations,
-                args = (instance, False,False,proxify),
+                args = (instance, False, False, proxify),
                 interval = interval,
                 repeat = None
         )
