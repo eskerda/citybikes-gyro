@@ -1,0 +1,33 @@
+version: '3'
+services:
+  rqworker:
+    image: citybikes/gyro
+    build: .
+    networks:
+      - citybikes
+    environment:
+      - MONGODB_HOST=mongodb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - QUEUES="default medium high"
+    env_file: .env
+    depends_on:
+      - mongodb
+      - redis
+  mongodb:
+    image: mongo:4.2-bionic
+    volumes:
+      - "mongodb-data:/data/db"
+    networks:
+      - citybikes
+    ports:
+      - 27017:27017
+  redis:
+    image: redis:5.0-alpine
+    networks:
+      - citybikes
+volumes:
+  mongodb-data:
+networks:
+  citybikes:

@@ -1,4 +1,4 @@
-PyBikes
-pymongo
+git+https://github.com/eskerda/pybikes.git
+pymongo==2.9.5
 rq==0.3.11
 rq-scheduler==0.3.6
